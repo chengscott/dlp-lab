@@ -28,10 +28,12 @@ class ReplayMemory:
 
 
 class DQN(nn.Module):
-  def __init__(self, state_dim=4, action_dim=2, hidden_dim=32):
+  def __init__(self, state_dim=4, action_dim=2, hidden_dim=24):
     super().__init__()
     self.layers = nn.Sequential(
         nn.Linear(state_dim, hidden_dim),
+        nn.ReLU(),
+        nn.Linear(hidden_dim, hidden_dim),
         nn.ReLU(),
         nn.Linear(hidden_dim, action_dim),
     )
@@ -82,15 +84,15 @@ def train(env):
       else:
         state_tensor = torch.Tensor(state).to(args.device)
         action = select_action(epsilon, state_tensor)
-        epsilon *= args.eps_decay
+        epsilon = max(epsilon * args.eps_decay, args.eps_min)
       # execute action
       next_state, reward, done, _ = env.step(action)
       # store transition
-      memory.append(state, [action], [reward / 500], next_state, [int(done)])
-      if total_steps >= args.warmup:
+      memory.append(state, [action], [reward / 10], next_state, [int(done)])
+      if total_steps >= args.warmup and total_steps % args.freq == 0:
         # update the behavior network
         update_behavior_network()
-      if total_steps % args.freq == 0:
+      if total_steps % args.target_freq == 0:
         # update the target network by copying from the behavior network
         target_net.load_state_dict(behavior_net.state_dict())
 
@@ -134,16 +136,18 @@ def parse_args():
   parser.add_argument('-m', '--model', default='cartpole_model')
   parser.add_argument('--restore', action='store_true')
   # train
-  parser.add_argument('-e', '--episode', default=1200, type=int)
-  parser.add_argument('-c', '--capacity', default=5000, type=int)
+  parser.add_argument('-e', '--episode', default=1800, type=int)
+  parser.add_argument('-c', '--capacity', default=10000, type=int)
   parser.add_argument('-bs', '--batch_size', default=128, type=int)
-  parser.add_argument('--warmup', default=5000, type=int)
+  parser.add_argument('--warmup', default=10000, type=int)
   parser.add_argument('--lr', default=.0005, type=float)
   parser.add_argument('--eps_decay', default=.995, type=float)
-  parser.add_argument('--gamma', default=.95, type=float)
-  parser.add_argument('--freq', default=200, type=int)
+  parser.add_argument('--eps_min', default=.01, type=float)
+  parser.add_argument('--gamma', default=.99, type=float)
+  parser.add_argument('--freq', default=4, type=int)
+  parser.add_argument('--target_freq', default=1000, type=int)
   # test
-  parser.add_argument('--test_epsilon', default=.01, type=float)
+  parser.add_argument('--test_epsilon', default=.001, type=float)
   parser.add_argument('--render', action='store_true')
   return parser.parse_args()
 
@@ -160,7 +164,7 @@ if __name__ == '__main__':
     # initialize target network
     target_net.load_state_dict(behavior_net.state_dict())
     # optimizer
-    optimizer = torch.optim.RMSprop(behavior_net.parameters(), lr=args.lr)
+    optimizer = torch.optim.Adam(behavior_net.parameters(), lr=args.lr)
     criterion = nn.SmoothL1Loss()
     # memory
     memory = ReplayMemory(capacity=args.capacity)
