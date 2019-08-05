@@ -155,7 +155,7 @@ def train(env):
 
 def test(env, render):
   print('Start Testing')
-  seeds = (856032 + i for i in range(10))
+  seeds = (20190813 + i for i in range(10))
   for seed in seeds:
     total_reward = 0
     env.seed(seed)
