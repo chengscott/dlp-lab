@@ -71,8 +71,8 @@ def select_action(state, low=-2, high=2):
   """based on the behavior (actor) network and exploration noise"""
   ## TODO ##
   # with torch.no_grad():
-  #  action = ? + ?
-  #  return max(min(action, high), low)
+  #   action = ? + ?
+  #   return max(min(action, high), low)
   raise NotImplementedError
 
 
@@ -89,9 +89,10 @@ def update_behavior_network():
   # TODO: critic loss
   # q_value = ?
   # with torch.no_grad():
-  #  a_next = ?
-  #  q_next = ?
-  # critic_loss = criterion(q_value, q_next)
+  #   a_next = ?
+  #   q_next = ?
+  #   q_target = ?
+  # critic_loss = criterion(q_value, q_target)
   raise NotImplementedError
   # optimize critic
   actor_net.zero_grad()
@@ -155,7 +156,7 @@ def train(env):
 
 def test(env, render):
   print('Start Testing')
-  seeds = (20190813 + i for i in range(10))
+  seeds = (args.seed + i for i in range(10))
   for seed in seeds:
     total_reward = 0
     env.seed(seed)
@@ -182,6 +183,7 @@ def parse_args():
   parser.add_argument('--tau', default=.001, type=float)
   # test
   parser.add_argument('--render', action='store_true')
+  parser.add_argument('--seed', default=20190822, type=int)
   return parser.parse_args()
 
 

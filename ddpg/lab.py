@@ -95,8 +95,8 @@ def update_behavior_network():
   with torch.no_grad():
     a_next = target_actor_net(state_next)
     q_next = target_critic_net(state_next, a_next)
-    q_next = (1 - done) * args.gamma * q_next + reward
-  critic_loss = criterion(q_value, q_next)
+    q_target = (1 - done) * args.gamma * q_next + reward
+  critic_loss = criterion(q_value, q_target)
   # optimize critic
   actor_net.zero_grad()
   critic_net.zero_grad()
@@ -159,7 +159,7 @@ def train(env):
 
 def test(env, render):
   print('Start Testing')
-  seeds = (20190813 + i for i in range(10))
+  seeds = (args.seed + i for i in range(10))
   for seed in seeds:
     total_reward = 0
     env.seed(seed)
@@ -196,6 +196,7 @@ def parse_args():
   parser.add_argument('--tau', default=.001, type=float)
   # test
   parser.add_argument('--render', action='store_true')
+  parser.add_argument('--seed', default=20190822, type=int)
   return parser.parse_args()
 
 

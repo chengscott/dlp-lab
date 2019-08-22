@@ -62,8 +62,8 @@ def update_behavior_network():
   q_value = behavior_net(state).gather(1, action.long())
   with torch.no_grad():
     q_next = target_net(next_state).max(dim=1).values.unsqueeze(1)
-    q_next = (1 - done) * args.gamma * q_next + reward
-  loss = criterion(q_value, q_next)
+    q_target = (1 - done) * args.gamma * q_next + reward
+  loss = criterion(q_value, q_target)
   # optimize
   optimizer.zero_grad()
   loss.backward()
@@ -109,7 +109,7 @@ def train(env):
 def test(env, render):
   print('Start Testing')
   epsilon = args.test_epsilon
-  seeds = (20190813 + i for i in range(10))
+  seeds = (args.seed + i for i in range(10))
   for seed in seeds:
     total_reward = 0
     env.seed(seed)
@@ -147,8 +147,9 @@ def parse_args():
   parser.add_argument('--freq', default=4, type=int)
   parser.add_argument('--target_freq', default=1000, type=int)
   # test
-  parser.add_argument('--test_epsilon', default=.001, type=float)
   parser.add_argument('--render', action='store_true')
+  parser.add_argument('--seed', default=20190822, type=int)
+  parser.add_argument('--test_epsilon', default=.001, type=float)
   return parser.parse_args()
 
 
